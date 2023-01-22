@@ -6,8 +6,11 @@ I did not write the underlaying code for the discord bot.
 I have however implemented functions on top of bot. 
 This includes most of the Music part of the bot.
 
+
 ============================================================================================
 ============================= Discord Bot Command HELP =====================================
+
+
 Music:
   join          Joins a voice channel.
   leave         Clears the queue and leaves the voice channel.
