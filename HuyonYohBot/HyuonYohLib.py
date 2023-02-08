@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 from random import randint
 
 
@@ -15,7 +16,8 @@ def fetchTodaysQuote():
 
 def getVocabulary():
     '''Return dataobject from JSON file'''
-    file = open('HyuonYohVocabulary.json')
+    path = os.getcwd()
+    file = open(f'{path}\HuyonYohBot\HyuonYohVocabulary.json')
     vocabulary = json.load(file)
     file.close()
     return vocabulary
@@ -124,7 +126,8 @@ def getHyonYohQuote(type = "random"):
 
 def getHyonYohSource():
     '''Fetch a random source from JSON file'''
-    file = open('HyuonYohSources.json')
+    path = os.getcwd()
+    file = open(f'{path}\HuyonYohBot\HyuonYohSources.json')
     source = json.load(file)["SOURCES"]
     file.close()
     r = randint(0,len(source)-1)

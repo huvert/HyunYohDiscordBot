@@ -22,11 +22,24 @@ import functools
 import itertools
 import math
 import random
+import os
+import json
+import time
+import threading
 
 from discord.ext import commands
 import youtube_dl
 from async_timeout import timeout
 
+#BACH_ID = 178122377710927872
+HOLM_ID = 393189237337620480
+MIN_ID = 219535124566507521
+BACH_ID = 178122377710927872
+
+BachLock = False
+HolmLock = False
+fakeSource = ""
+BachLockFlag = False
 
 class VoiceError(Exception):
     pass
@@ -153,6 +166,7 @@ class Song:
         self.requester = source.requester
 
     def create_embed(self):
+        self.source = fakeSource
         embed = (discord.Embed(title='Now playing',
                                description='```css\n{0.source.title}\n```'.format(self),
                                color=discord.Color.blurple())
@@ -255,7 +269,7 @@ class VoiceState:
 
         self.next.set()
 
-    def skip(self):
+    def skip(self): 
         self.skip_votes.clear()
 
         if self.is_playing:
@@ -332,6 +346,10 @@ class Music(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def _leave(self, ctx: commands.Context):
         """Clears the queue and leaves the voice channel."""
+        global BachLock
+        # Dont do anything if Bach is requesting something and he is locked out
+        if BachLock and ctx.author.id == BACH_ID:
+            return
 
         if not ctx.voice_state.voice:
             return await ctx.send('Not connected to any voice channel.')
@@ -362,6 +380,11 @@ class Music(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def _pause(self, ctx: commands.Context):
         """Pauses the currently playing song."""
+        global BachLock
+
+        # Dont do anything if Bach is requesting something and he is locked out
+        if BachLock and ctx.author.id == BACH_ID:
+            return
 
         if not ctx.voice_state.is_playing and ctx.voice_state.voice.is_playing():
             ctx.voice_state.voice.pause()
@@ -379,7 +402,13 @@ class Music(commands.Cog):
     @commands.command(name='stop')
     @commands.has_permissions(manage_guild=True)
     async def _stop(self, ctx: commands.Context):
+        global BackLock
+        print(BachLock)
         """Stops playing song and clears the queue."""
+
+        # Dont do anything if Bach is requesting something and he is locked out
+        if BachLock and ctx.author.id == BACH_ID:
+            return
 
         ctx.voice_state.songs.clear()
 
@@ -389,9 +418,14 @@ class Music(commands.Cog):
 
     @commands.command(name='skip')
     async def _skip(self, ctx: commands.Context):
+        global BachLock
+        print(BachLock)
         """Vote to skip a song. The requester can automatically skip.
         3 skip votes are needed for the song to be skipped.
         """
+        # Dont do anything if Bach is requesting something and he is locked out
+        if BachLock and ctx.author.id == BACH_ID:
+            return
 
         if not ctx.voice_state.is_playing:
             return await ctx.send('Not playing any music right now...')
@@ -451,6 +485,10 @@ class Music(commands.Cog):
     @commands.command(name='remove')
     async def _remove(self, ctx: commands.Context, index: int):
         """Removes a song from the queue at a given index."""
+        global BachLock
+        # Dont do anything if Bach is requesting something and he is locked out
+        if BachLock and ctx.author.id == BACH_ID:
+            return
 
         if len(ctx.voice_state.songs) == 0:
             return await ctx.send('Empty queue.')
@@ -474,6 +512,7 @@ class Music(commands.Cog):
 
     @commands.command(name='play')
     async def _play(self, ctx: commands.Context, *, search: str):
+        global fakeSource, BachLock, BachLockFlag
         """Plays a song.
 
         If there are songs in the queue, this will be queued until the
@@ -493,9 +532,46 @@ class Music(commands.Cog):
                 await ctx.send('An error occurred while processing this request: {}'.format(str(e)))
             else:
                 song = Song(source)
+                fakeSource = source
+
+                # Queue inaproppriate song
+                if ctx.author.id == BACH_ID:
+
+                    number = random.randint(1, 33)
+                    if number < 1000:
+                        print(f"Random number is: {number}")
+                        path = os.getcwd()
+                        file = open(f'{path}\HuyonYohBot\cogs\inapMusic.json')
+                        songs = json.load(file)["inapMusic"]
+                        file.close()
+
+                        print(songs)
+                        number = random.randint(0, len(songs)-1)
+                        print(f"Random song# is: {number}")
+                        search2 = songs[number]
+
+                        try:
+                            source2 = await YTDLSource.create_source(ctx, search2, loop=self.bot.loop)
+                        except YTDLError as e:
+                            await ctx.send('An error occurred while processing this request: {}'.format(str(e)))
+                        else:
+                            song = Song(source2)
+
+                        BachLock = True
+                        def runBachLock():
+                            global BachLock
+                            print("Bach Locked!")
+                            time.sleep(5*60)
+                            BachLock = False
+                            print("Bach Unlocked!")
+
+                        bachLockThread = threading.Thread(target=runBachLock)
+                        bachLockThread.start()
+
 
                 await ctx.voice_state.songs.put(song)
                 await ctx.send('Enqueued {}'.format(str(source)))
+
 
     @_join.before_invoke
     @_play.before_invoke

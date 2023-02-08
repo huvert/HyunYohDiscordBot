@@ -10,7 +10,9 @@ from random import randint
 import datetime
 
 
-TOKEN = "MTAzNTY1OTE2MzAwNDU3NTc0NA.GzguSQ.5cul7VBJKT90NRnDJqf-eofnBCURT9c3S2o7tM"
+# Cant upload TOKEN to github. Needs to be stored locally on machine.
+# Use .gitignore :)
+from TOKEN import TOKEN
 PREFIX = '_'
 MEME_CH_ID = 1014781327347822633
 
@@ -21,7 +23,7 @@ youtube_dl.utils.bug_reports_message = lambda: ''
 bot = commands.Bot(PREFIX, description='Hyun Yoh Bot')
 
 
-for filename in os.listdir('./cogs'):   # ./ --> Current folder
+for filename in os.listdir(f"{os.getcwd()}\HuyonYohBot\cogs"):   # ./ --> Current folder
     if filename.endswith('.py'):
         bot.load_extension(f'cogs.{filename[:-3]}')
 
@@ -37,6 +39,7 @@ msg = ""
 async def on_ready():
     print('Logged in as:\n{0.user.name}\n{0.user.id}'.format(bot))
     
+    '''
     # INITIAL WAIT
     now = datetime.datetime.now()
     today = datetime.date.today()
@@ -58,7 +61,8 @@ async def on_ready():
         print(msg)
         await channel.send(msg)
         await asyncio.sleep(60*60*24)
-
+    '''
+    
 
 @bot.command()
 async def inspirational(ctx):
